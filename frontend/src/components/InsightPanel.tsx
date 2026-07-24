@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 
 interface InsightPanelProps {
   description: string;
@@ -11,62 +12,70 @@ export const InsightPanel: React.FC<InsightPanelProps> = ({
   isStreaming,
   latencyMs,
 }) => {
-  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const { speak, stop, isMuted, toggleMute, isSpeaking } = useTextToSpeech();
 
-  // Native Browser Text-To-Speech (Web Speech API)
-  const handleSpeak = () => {
-    if (!description || !('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
-    const utterance = new SpeechSynthesisUtterance(description);
-    utterance.rate = 1.0;
-    
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-  };
+  // Automatically trigger voice output when narrative updates
+  useEffect(() => {
+    if (description && isStreaming) {
+      speak(description);
+    } else if (!isStreaming) {
+      stop();
+    }
+  }, [description, isStreaming, speak, stop]);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between gap-4">
-      <div>
-        {/* Header Block */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
-            <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-              Groq Cloud VLM Narrative
-            </h3>
-          </div>
-
-          <button
-            onClick={handleSpeak}
-            disabled={!description || !isStreaming}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1.5 ${
-              isSpeaking
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed'
-            }`}
-          >
-            <span>{isSpeaking ? '🔊 Speaking...' : '🔊 Read Aloud'}</span>
-          </button>
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col gap-4">
+      {/* Panel Header with Voice Toggle Button */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isStreaming ? 'bg-emerald-400' : 'bg-slate-500'
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-3 w-3 ${
+                isStreaming ? 'bg-emerald-500' : 'bg-slate-600'
+              }`}
+            />
+          </span>
+          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+            AI Narrative Insights
+          </h3>
         </div>
 
-        {/* Narrative Box */}
-        <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 min-h-[90px] flex items-center">
-          <p className="text-sm text-indigo-200 leading-relaxed font-sans">
-            {isStreaming
-              ? description || 'Analyzing video stream context with Groq Vision...'
-              : 'Stream is offline. Start camera to initialize real-time AI reasoning.'}
-          </p>
-        </div>
+        {/* Audio Toggle Control */}
+        <button
+          onClick={toggleMute}
+          title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+            isMuted
+              ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              : 'bg-emerald-950/60 border-emerald-800/80 text-emerald-400 hover:bg-emerald-900/50'
+          }`}
+        >
+          <span>{isMuted ? '🔇 Muted' : isSpeaking ? '🔊 Speaking...' : '🔊 Audio On'}</span>
+        </button>
       </div>
 
-      {/* Latency Footer */}
-      <div className="flex items-center justify-between text-xs font-mono text-slate-500 pt-2 border-t border-slate-800/60">
-        <span>Model: qwen/qwen3.6-27b</span>
-        <span className="text-amber-400">{latencyMs > 0 ? `${latencyMs}ms latency` : '0ms'}</span>
+      {/* Dynamic Scene Description Text */}
+      <div className="min-h-[80px] flex items-center justify-center bg-slate-950/50 border border-slate-800/80 rounded-lg p-4">
+        {isStreaming ? (
+          <p className="text-sm text-slate-300 leading-relaxed font-normal">
+            {description || 'Analyzing scene context with Groq VLM...'}
+          </p>
+        ) : (
+          <p className="text-xs text-slate-500 italic text-center">
+            Start camera stream to activate automated scene narration and voice synthesis.
+          </p>
+        )}
+      </div>
+
+      {/* Latency Indicator Footer */}
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>Pipeline Mode: Dual (YOLO + Groq VLM)</span>
+        <span className="font-mono text-slate-400">{latencyMs} ms</span>
       </div>
     </div>
   );

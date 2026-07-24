@@ -4,12 +4,13 @@ import { BoundingBoxOverlay, type Detection } from './BoundingBoxOverlay';
 interface ViewportProps {
   isStreaming: boolean;
   detections: Detection[];
-  onFrameCapture?: (base64Image: string) => void;
+  onFrameCaptured?: (base64Frame: string) => void;
 }
 
 export const Viewport: React.FC<ViewportProps> = ({
   isStreaming,
   detections,
+  onFrameCaptured,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -36,6 +37,28 @@ export const Viewport: React.FC<ViewportProps> = ({
         console.error('Webcam Access Error:', err);
       });
   }, [isStreaming]);
+
+  // Periodic Frame Sampler (captures frame every 200ms when streaming)
+  useEffect(() => {
+    if (!isStreaming || !onFrameCaptured) return;
+
+    const intervalId = setInterval(() => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      if (video && canvas && video.readyState === 4) {
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          // Export lightweight JPEG frame
+          const base64Frame = canvas.toDataURL('image/jpeg', 0.6);
+          onFrameCaptured(base64Frame);
+        }
+      }
+    }, 200); // 5 FPS frame sampling loop for smooth backend processing
+
+    return () => clearInterval(intervalId);
+  }, [isStreaming, onFrameCaptured]);
 
   return (
     <div className="relative w-full max-w-4xl mx-auto bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden aspect-video flex items-center justify-center">

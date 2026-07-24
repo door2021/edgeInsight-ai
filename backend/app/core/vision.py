@@ -1,7 +1,9 @@
 import base64
 import logging
+from urllib import response
 import cv2
 import numpy as np
+import re
 from ultralytics import YOLO
 from groq import Groq
 from .config import settings
@@ -106,10 +108,18 @@ class VisionService:
                         ]
                     }
                 ],
-                max_tokens=100,
-                temperature=0.2
+                max_tokens=200,
+                temperature=0.2,
+                extra_body={
+                    "reasoning_format": "hidden", # Suppresses <think> tags from Groq API output
+                    "reasoning_effort": "none"   # Disables reasoning mode for fast direct outputs
+                }
             )
-            return response.choices[0].message.content.strip()
+            raw_content = response.choices[0].message.content.strip()
+
+            # Clean out <think>...</think> reasoning blocks if present
+            clean_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL).strip()
+            return clean_content if clean_content else "Scene analyzed."
         except Exception as e:
             logger.error(f"Groq VLM API Error: {str(e)}")
             return "VLM narrative temporarily unavailable."

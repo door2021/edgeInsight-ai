@@ -1,5 +1,9 @@
 import type { Detection } from '../components/BoundingBoxOverlay';
 
+const API_BASE_URL = import.meta.env.PROD 
+  ? '/api/v1' 
+  : 'http://localhost:8000/api/v1';
+
 export interface InferenceResponse {
   success: boolean;
   fps: number;
@@ -7,8 +11,6 @@ export interface InferenceResponse {
   detections: Detection[];
   narrative?: string;
 }
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export async function sendFrameForInference(
   base64Image: string,

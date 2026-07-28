@@ -25,7 +25,9 @@
 
 | Spatial Detection & Overlays | Real-Time Scene Narration |
 |------------------------------|---------------------------|
-| <img src="docs/screenshots/detection-boxes.png" width="400px"/> | <img src="docs/screenshots/vlm-narration.png" width="400px"/> |
+| <img width="1510" height="785" alt="Screenshot 2026-07-28 at 4 43 45 PM" src="https://github.com/user-attachments/assets/0bc9a54b-093e-42f3-9dc6-e951fe4a46e1" />
+ | <img width="1510" height="785" alt="Screenshot 2026-07-28 at 4 45 03 PM" src="https://github.com/user-attachments/assets/d4c9f416-2144-48c9-842f-b6ec1e6c55cb" />
+ |
 
 </div>
 
